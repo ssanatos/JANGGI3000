@@ -774,8 +774,11 @@ let thinkGateState = 'idle'; // idle | armed | counting | shown
 let thinkCountdownTimer = null;
 const THINK_GUIDE_DEFAULT = 'AI 생각보기 → 배너를 클릭해주세요';
 
+let mouseOverAdSlot = false;
+
 function onWindowBlurForAd() {
   if (thinkGateState !== 'armed') return;
+  if (!mouseOverAdSlot) return; // 배너가 아닌 곳(주소창, 다른 창 등)에서 발생한 blur는 무시
   window.removeEventListener('blur', onWindowBlurForAd);
   thinkGateState = 'counting';
   startAdCountdown();
@@ -829,6 +832,7 @@ function armThinkGate() {
   document.getElementById('thinkAdPanel').classList.add('gate-active');
   document.getElementById('adGateMsg').textContent = THINK_GUIDE_DEFAULT;
   document.getElementById('thinkHideBtn').hidden = true;
+  mouseOverAdSlot = false;
   window.addEventListener('blur', onWindowBlurForAd);
 }
 
@@ -1019,6 +1023,15 @@ function finishSession() {
    5. 초기화
    ========================================================= */
 document.getElementById('totalCountText').textContent = Math.min(TOTAL_QUESTIONS, RAW_PUZZLES.length);
+(function initAdSlotHoverTracking() {
+  const adSlot = document.getElementById('ad-bar');
+  if (!adSlot) return;
+  adSlot.addEventListener('mouseenter', () => { mouseOverAdSlot = true; });
+  adSlot.addEventListener('mouseleave', () => { mouseOverAdSlot = false; });
+  // 터치 기기 대응: 배너 영역을 터치하는 순간에도 표시해준다
+  adSlot.addEventListener('touchstart', () => { mouseOverAdSlot = true; }, { passive: true });
+})();
+
 document.getElementById('startBtn').addEventListener('click', startSession);
 document.getElementById('retryBtn').addEventListener('click', startSession);
 document.getElementById('thinkHideBtn').addEventListener('click', toggleThinkVisible);
